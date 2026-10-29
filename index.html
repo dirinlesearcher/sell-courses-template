@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Курси лазерного видалення тату та перманентного макіяжу" />
+  <title>AURUM — Laser Removal Academy</title>
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="site-header" id="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#hero" id="brand">
+        <img src="assets/icons/logo.svg" alt="" class="brand-mark" width="28" height="28" />
+        <span class="brand-text" id="brand-text">AURUM</span>
+      </a>
+      <nav class="main-nav" id="main-nav" aria-label="Основна навігація"></nav>
+      <div class="header-actions">
+        <button
+          class="theme-toggle"
+          id="theme-toggle"
+          type="button"
+          aria-label="Перемкнути тему"
+          title="День / Ніч"
+        >
+          <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="12" cy="12" r="4.2" />
+            <path d="M12 2.5v2.4M12 19.1v2.4M4.3 4.3l1.7 1.7M18 18l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.3 19.7 6 18M18 6l1.7-1.7" />
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.4 14.2A8.5 8.5 0 0 1 9.8 3.6a8.5 8.5 0 1 0 10.6 10.6Z" />
+          </svg>
+        </button>
+        <button class="nav-burger" id="nav-burger" type="button" aria-label="Меню" aria-expanded="false">
+          <span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero section" id="hero">
+      <div class="container hero-inner">
+        <p class="eyebrow" id="hero-eyebrow"></p>
+        <h1 class="hero-title" id="hero-title"></h1>
+        <p class="hero-subtitle" id="hero-subtitle"></p>
+        <div class="hero-ctas" id="hero-ctas"></div>
+        <dl class="hero-stats" id="hero-stats"></dl>
+      </div>
+      <div class="hero-line" aria-hidden="true"></div>
+    </section>
+
+    <section class="section" id="author">
+      <div class="container">
+        <h2 class="section-title" id="author-title"></h2>
+        <div class="gold-rule" aria-hidden="true"></div>
+        <div class="author-grid">
+          <figure class="author-photo">
+            <img id="author-photo" src="" alt="" loading="lazy" />
+          </figure>
+          <div class="author-body">
+            <h3 class="author-name" id="author-name"></h3>
+            <p class="author-role" id="author-role"></p>
+            <div class="author-bio" id="author-bio"></div>
+            <ul class="credentials" id="author-credentials"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="course">
+      <div class="container">
+        <h2 class="section-title" id="course-title"></h2>
+        <p class="section-subtitle" id="course-subtitle"></p>
+        <div class="gold-rule" aria-hidden="true"></div>
+        <div class="course-grid">
+          <div class="course-modules" id="course-modules"></div>
+          <aside class="course-card">
+            <img class="course-image" id="course-image" src="" alt="" loading="lazy" />
+            <ul class="course-benefits" id="course-benefits"></ul>
+            <div class="pricing" id="course-pricing"></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="calculator">
+      <div class="container">
+        <h2 class="section-title" id="calc-title"></h2>
+        <p class="section-subtitle" id="calc-subtitle"></p>
+        <div class="gold-rule" aria-hidden="true"></div>
+
+        <div class="calc-grid">
+          <div class="calc-inputs">
+            <div class="field">
+              <label for="laser-cost" id="calc-laser-label"></label>
+              <div class="input-affix">
+                <input type="number" id="laser-cost" min="0" step="100" inputmode="decimal" />
+                <span class="affix" id="currency-affix"></span>
+              </div>
+            </div>
+
+            <div class="services-head">
+              <h3 id="calc-services-label"></h3>
+              <button type="button" class="btn btn-ghost btn-sm" id="add-service"></button>
+            </div>
+            <div id="services-list"></div>
+          </div>
+
+          <div class="calc-results">
+            <div class="stat-cards" id="stat-cards"></div>
+            <div class="chart-wrap">
+              <canvas id="calc-chart" height="240" aria-label="Графік окупності" role="img"></canvas>
+              <p class="chart-caption" id="chart-caption"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="questionnaire">
+      <div class="container container-narrow">
+        <h2 class="section-title" id="quiz-title"></h2>
+        <p class="section-subtitle" id="quiz-subtitle"></p>
+        <div class="gold-rule" aria-hidden="true"></div>
+        <div class="quiz" id="quiz">
+          <div class="quiz-progress" id="quiz-progress"></div>
+          <div class="quiz-step" id="quiz-step"></div>
+          <div class="quiz-nav" id="quiz-nav"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="testimonials">
+      <div class="container">
+        <h2 class="section-title" id="testimonials-title"></h2>
+        <div class="gold-rule" aria-hidden="true"></div>
+        <div class="testimonial-grid" id="testimonial-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-brand" id="footer-brand"></p>
+      <p class="footer-note" id="footer-note"></p>
+      <div class="footer-links" id="footer-links"></div>
+    </div>
+  </footer>
+
+  <noscript>
+    <p style="padding: 2rem; text-align: center">
+      Для перегляду сайту увімкніть JavaScript.
+    </p>
+  </noscript>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
