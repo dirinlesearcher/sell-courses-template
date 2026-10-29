@@ -35,10 +35,11 @@ async function boot() {
   initCalculator(config.calculator);
   initQuestionnaire(config.questionnaire);
   renderTestimonials(config.testimonials);
+  initContact(config.contact);
   renderFooter(config.footer);
   injectAnalytics(config.analytics);
-  initScrollSpy(config.navigation);
   initHeaderScroll();
+  initRouter(config.routes);
 }
 
 /* ---------------- meta ---------------- */
@@ -67,12 +68,14 @@ function initTheme(themeCfg = {}) {
 }
 
 /* ---------------- nav ---------------- */
+const pageHref = (page) => `#/${page}`;
+
 function renderNav(items) {
   const nav = $("#main-nav");
   items.forEach(({ id, label }) => {
     const a = el("a", "", esc(label));
-    a.href = `#${id}`;
-    a.dataset.section = id;
+    a.href = pageHref(id);
+    a.dataset.page = id;
     nav.appendChild(a);
   });
 
@@ -87,21 +90,46 @@ function renderNav(items) {
   });
 }
 
-function initScrollSpy(items) {
+/* ---------------- router: one page visible at a time ---------------- */
+function initRouter(routes = {}) {
+  const sections = $$("main [data-page]");
+  const pages = new Set(sections.map((s) => s.dataset.page));
+  const home = routes.home || "home";
+  const aliases = routes.aliases || {};
   const links = $$("#main-nav a");
-  const spy = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((e) => {
-        if (!e.isIntersecting) return;
-        links.forEach((l) => l.classList.toggle("active", l.dataset.section === e.target.id));
-      });
-    },
-    { rootMargin: "-40% 0px -55% 0px" }
-  );
-  items.forEach(({ id }) => {
-    const s = document.getElementById(id);
-    if (s) spy.observe(s);
-  });
+
+  function resolve() {
+    let raw;
+    try {
+      raw = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+    } catch (_) {
+      return home;
+    }
+    const page = aliases[raw] || raw;
+    return pages.has(page) ? page : home;
+  }
+
+  function show() {
+    const page = resolve();
+    let first = true;
+    sections.forEach((s) => {
+      const on = s.dataset.page === page;
+      s.hidden = !on;
+      s.classList.toggle("page-top", on && first);
+      if (on) first = false;
+    });
+    links.forEach((l) => {
+      const on = l.dataset.page === page;
+      l.classList.toggle("active", on);
+      if (on) l.setAttribute("aria-current", "page");
+      else l.removeAttribute("aria-current");
+    });
+    scrollTo({ top: 0, behavior: "instant" });
+    document.dispatchEvent(new CustomEvent("pagechange", { detail: { page } }));
+  }
+
+  addEventListener("hashchange", show);
+  show();
 }
 
 function initHeaderScroll() {
@@ -112,7 +140,7 @@ function initHeaderScroll() {
 /* ---------------- hero ---------------- */
 function ctaButton({ label, target }, solid) {
   const a = el("a", `btn ${solid ? "btn-solid" : ""}`, esc(label));
-  a.href = `#${target}`;
+  a.href = pageHref(target);
   return a;
 }
 
@@ -290,6 +318,7 @@ function initCalculator(calc) {
   const chart = $("#calc-chart");
   const ctx = chart.getContext("2d");
   document.addEventListener("themechange", () => drawChart(lastTotals));
+  document.addEventListener("pagechange", () => drawChart(lastTotals));
 
   function statCard(label, value, sub, wide) {
     return `<div class="stat-card${wide ? " wide" : ""}">
@@ -321,7 +350,7 @@ function initCalculator(calc) {
   }
 
   function drawChart(t) {
-    if (!t) return;
+    if (!t || !chart.clientWidth) return;
     const css = getComputedStyle(document.documentElement);
     const gold = css.getPropertyValue("--gold").trim() || "#c9a55c";
     const dim = css.getPropertyValue("--text-dim").trim() || "#999";
@@ -571,6 +600,61 @@ function renderTestimonials(t) {
         </div>
       </div>`;
     grid.appendChild(card);
+  });
+}
+
+/* ---------------- contact form (UI only, nothing is sent) ---------------- */
+function initContact(contact) {
+  $("#contact-title").textContent = contact.title;
+  $("#contact-subtitle").textContent = contact.subtitle;
+
+  const form = $("#contact-form");
+  const fields = $("#contact-fields");
+  const submit = $("#contact-submit");
+  const done = $("#contact-done");
+  submit.textContent = contact.buttons.submit;
+
+  const inputs = contact.fields.map((f) => {
+    const wrap = el("div", "svc-field");
+    const id = `contact-${f.key}`;
+    wrap.innerHTML = `<label for="${id}">${esc(f.label)}${f.required ? " *" : ""}</label>`;
+    const input = document.createElement(f.type === "textarea" ? "textarea" : "input");
+    if (f.type !== "textarea") input.type = f.type;
+    else input.rows = f.rows || 5;
+    input.id = id;
+    input.name = f.key;
+    input.placeholder = f.placeholder || "";
+    input.required = !!f.required;
+    wrap.appendChild(input);
+    fields.appendChild(wrap);
+    return input;
+  });
+
+  const valid = () => inputs.every((i) => !i.required || i.value.trim().length > 0) && form.checkValidity();
+  const sync = () => (submit.disabled = !valid());
+  form.addEventListener("input", sync);
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!valid()) return;
+    form.hidden = true;
+    done.hidden = false;
+    done.innerHTML = `
+      <div class="check">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </div>
+      <h3 class="quiz-step-title">${esc(contact.done.title)}</h3>
+      <p class="quiz-step-hint">${esc(contact.done.text)}</p>`;
+    const again = el("button", "btn btn-ghost btn-sm", esc(contact.buttons.again));
+    again.type = "button";
+    again.addEventListener("click", () => {
+      form.reset();
+      sync();
+      done.hidden = true;
+      form.hidden = false;
+      inputs[0]?.focus();
+    });
+    done.appendChild(again);
   });
 }
 
