@@ -99,7 +99,12 @@ function initRouter(routes = {}) {
   const links = $$("#main-nav a");
 
   function resolve() {
-    const raw = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+    let raw;
+    try {
+      raw = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+    } catch (_) {
+      return home;
+    }
     const page = aliases[raw] || raw;
     return pages.has(page) ? page : home;
   }
