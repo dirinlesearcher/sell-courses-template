@@ -25,6 +25,37 @@ course modules/pricing, calculator labels and defaults, questionnaire steps,
 testimonials, footer — lives in `data/config.json`. Change values there; no
 HTML/JS edits needed.
 
+## Pages
+
+The site is split into separate pages; only the active one is shown and the
+header is the only way to switch between them (hash routes, so it works on
+GitHub Pages): `#/home` (hero), `#/about` (author + testimonials + contact
+form), `#/course`, `#/calculator`, `#/questionnaire`. Each `<section>` in
+`index.html` declares its page with `data-page`. Header links come from
+`navigation`; old anchors like `#testimonials` are mapped via
+`routes.aliases`.
+
+## Contact form
+
+Configured under `contact` (fields, button labels, success text). It only
+validates and shows a confirmation — nothing is sent yet. The same form is
+reused as the questionnaire's last step.
+
+## Questionnaire
+
+Configured under `questionnaire.steps`. Step types:
+
+- `choice` — question with `options: [{ id, label }]`
+- `info` — text page with an optional `link` button
+- `contact` — the shared contact form (`exclude` hides fields, `submit` sets
+  the button label)
+
+Branching: `showIf: { stepKey: [optionId, ...] }` shows a step only when the
+earlier answer matches; `final: true` ends the flow at that step. Current flow:
+if current income is up to €800 the "invest" question is asked; answering
+"no" there ends on the gift page instead of the contact form. Submitted
+answers + contact data are stored in localStorage (`aurum-leads`).
+
 ## Theme
 
 Light/dark toggle sits in the header (top right). Default theme is set by

@@ -43,10 +43,12 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-h) + 16px); }
 
 body {
   margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   font-family: var(--font-body);
   font-weight: 300;
   background: var(--bg);
@@ -65,7 +67,10 @@ button { font: inherit; cursor: pointer; }
 }
 .container-narrow { --max-w: 760px; }
 
-.section { padding: 96px 0; }
+main { flex: 1; }
+
+.section { --section-pad: 96px; padding: var(--section-pad) 0; }
+.section.page-top:not(.hero) { padding-top: calc(var(--header-h) + var(--section-pad)); }
 .section-alt { background: var(--bg-alt); }
 
 .eyebrow {
@@ -463,7 +468,8 @@ input[type="text"],
 input[type="number"],
 input[type="email"],
 input[type="tel"],
-select {
+select,
+textarea {
   width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--line);
@@ -474,8 +480,10 @@ select {
   font-size: 15px;
   transition: border-color 0.25s;
 }
+textarea { resize: vertical; min-height: 120px; line-height: 1.5; }
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: none;
   border-color: var(--gold);
 }
@@ -650,6 +658,26 @@ select:focus {
 }
 
 /* ============================================================
+   Contact
+   ============================================================ */
+.contact-form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 36px;
+  box-shadow: var(--shadow);
+}
+.contact-form[hidden] { display: none; }
+.contact-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.contact-fields .svc-field:first-child,
+.contact-fields .svc-field:has(textarea) { grid-column: 1 / -1; }
+.contact-actions { display: flex; justify-content: flex-end; margin-top: 26px; }
+#contact-mount .quiz-done .btn { margin-top: 8px; }
+.quiz .contact-form { background: none; border: 0; padding: 0; box-shadow: none; }
+.quiz-info-actions { display: flex; justify-content: center; margin-top: 28px; }
+.quiz-done .btn { margin-top: 8px; }
+
+/* ============================================================
    Testimonials
    ============================================================ */
 .testimonial-grid {
@@ -740,7 +768,7 @@ select:focus {
 }
 
 @media (max-width: 720px) {
-  .section { padding: 64px 0; }
+  .section { --section-pad: 64px; }
   .main-nav {
     position: fixed;
     top: var(--header-h);
@@ -764,7 +792,9 @@ select:focus {
   .svc-grid { grid-template-columns: 1fr; }
   .stat-cards { grid-template-columns: 1fr 1fr; }
   .testimonial-grid { grid-template-columns: 1fr; }
-  .quiz { padding: 24px 20px; }
+  .quiz,
+  .contact-form { padding: 24px 20px; }
+  .contact-fields { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
