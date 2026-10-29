@@ -38,7 +38,23 @@ form), `#/course`, `#/calculator`, `#/questionnaire`. Each `<section>` in
 ## Contact form
 
 Configured under `contact` (fields, button labels, success text). It only
-validates and shows a confirmation — nothing is sent yet.
+validates and shows a confirmation — nothing is sent yet. The same form is
+reused as the questionnaire's last step.
+
+## Questionnaire
+
+Configured under `questionnaire.steps`. Step types:
+
+- `choice` — question with `options: [{ id, label }]`
+- `info` — text page with an optional `link` button
+- `contact` — the shared contact form (`exclude` hides fields, `submit` sets
+  the button label)
+
+Branching: `showIf: { stepKey: [optionId, ...] }` shows a step only when the
+earlier answer matches; `final: true` ends the flow at that step. Current flow:
+if current income is up to €800 the "invest" question is asked; answering
+"no" there ends on the gift page instead of the contact form. Submitted
+answers + contact data are stored in localStorage (`aurum-leads`).
 
 ## Theme
 

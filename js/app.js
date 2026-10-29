@@ -33,7 +33,7 @@ async function boot() {
   renderAuthor(config.author);
   renderCourse(config.course);
   initCalculator(config.calculator);
-  initQuestionnaire(config.questionnaire);
+  initQuestionnaire(config.questionnaire, config.contact);
   renderTestimonials(config.testimonials);
   initContact(config.contact);
   renderFooter(config.footer);
@@ -453,71 +453,97 @@ function initCalculator(calc) {
 }
 
 /* ---------------- questionnaire ---------------- */
-function initQuestionnaire(quiz) {
+// Steps can be conditional: `showIf: { stepKey: [optionId, ...] }` shows a step
+// only when every listed earlier answer matches. A step with `final: true`
+// ends the flow (no contact form after it).
+function initQuestionnaire(quiz, contact) {
   $("#quiz-title").textContent = quiz.title;
   $("#quiz-subtitle").textContent = quiz.subtitle;
 
   const answers = {};
+  const steps = quiz.steps;
   let step = 0;
-  const totalSteps = quiz.steps.length;
+
+  const isVisible = (s) =>
+    !s.showIf ||
+    Object.entries(s.showIf).every(([key, ids]) => ids.includes(answers[key]));
+
+  // Steps the visitor goes through with the current answers.
+  function path() {
+    const out = [];
+    for (let i = 0; i < steps.length; i++) {
+      if (!isVisible(steps[i])) continue;
+      out.push(i);
+      const s = steps[i];
+      if (s.final) break;
+      if (s.type === "choice" && answers[s.key] == null) break;
+    }
+    return out;
+  }
 
   function renderProgress() {
     const prog = $("#quiz-progress");
+    const p = path();
+    const pos = p.indexOf(step);
+    const last = p[p.length - 1];
+    const pending = (s) => Object.keys(s.showIf || {}).some((k) => answers[k] == null);
+    const ahead =
+      steps[last].type === "choice"
+        ? steps.slice(last + 1).filter((s) => !s.final && (isVisible(s) || pending(s))).length
+        : 0;
+    const total = p.length + ahead;
     prog.innerHTML = "";
-    for (let i = 0; i < totalSteps; i++) {
-      prog.appendChild(el("span", i <= step ? "done" : ""));
-    }
+    for (let i = 0; i < total; i++) prog.appendChild(el("span", i <= pos ? "done" : ""));
   }
 
-  function currentStepValid() {
-    const s = quiz.steps[step];
-    if (s.type === "choice") return answers[s.key] != null;
-    if (s.type === "form") {
-      return s.fields.every(
-        (f) => !f.required || (answers[f.key] || "").trim().length > 0
-      );
-    }
-    return true;
+  function answeredSteps() {
+    return path()
+      .map((i) => steps[i])
+      .filter((s) => s.type === "choice" && answers[s.key] != null)
+      .map((s) => ({
+        key: s.key,
+        question: s.title,
+        answer: s.options.find((o) => o.id === answers[s.key])?.label,
+      }));
   }
 
   function renderStep() {
-    const s = quiz.steps[step];
+    const s = steps[step];
     const box = $("#quiz-step");
     box.innerHTML = `<h3 class="quiz-step-title">${esc(s.title)}</h3>
-      <p class="quiz-step-hint">${esc(s.hint || "")}</p>`;
+      ${s.hint ? `<p class="quiz-step-hint">${esc(s.hint)}</p>` : ""}`;
 
     if (s.type === "choice") {
       const opts = el("div", "quiz-options");
       s.options.forEach((opt) => {
-        const btn = el("button", `quiz-option${answers[s.key] === opt ? " selected" : ""}`, esc(opt));
+        const btn = el("button", `quiz-option${answers[s.key] === opt.id ? " selected" : ""}`, esc(opt.label));
         btn.type = "button";
         btn.addEventListener("click", () => {
-          answers[s.key] = opt;
+          answers[s.key] = opt.id;
           $$(".quiz-option", opts).forEach((b) => b.classList.remove("selected"));
           btn.classList.add("selected");
+          renderProgress();
           syncNav();
         });
         opts.appendChild(btn);
       });
       box.appendChild(opts);
-    } else if (s.type === "form") {
-      const fields = el("div", "quiz-fields");
-      s.fields.forEach((f) => {
-        const wrap = el("div", "svc-field");
-        wrap.innerHTML = `<label>${esc(f.label)}${f.required ? " *" : ""}</label>`;
-        const input = document.createElement("input");
-        input.type = f.type;
-        input.placeholder = f.placeholder || "";
-        input.value = answers[f.key] || "";
-        input.required = !!f.required;
-        input.addEventListener("input", () => {
-          answers[f.key] = input.value;
-          syncNav();
-        });
-        wrap.appendChild(input);
-        fields.appendChild(wrap);
-      });
-      box.appendChild(fields);
+    } else if (s.type === "info" && s.link?.url) {
+      const actions = el("div", "quiz-info-actions");
+      const a = el("a", "btn btn-solid", esc(s.link.label));
+      a.href = s.link.url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      actions.appendChild(a);
+      box.appendChild(actions);
+    } else if (s.type === "contact") {
+      box.appendChild(
+        buildContactForm(contact, {
+          exclude: s.exclude,
+          submitLabel: s.submit,
+          onSubmit: finish,
+        })
+      );
     }
     renderNavButtons();
     renderProgress();
@@ -527,58 +553,63 @@ function initQuestionnaire(quiz) {
   function renderNavButtons() {
     const nav = $("#quiz-nav");
     nav.innerHTML = "";
+    const p = path();
+    const pos = p.indexOf(step);
     const back = el("button", "btn btn-ghost btn-sm", esc(quiz.buttons.back));
     back.type = "button";
-    back.disabled = step === 0;
+    back.disabled = pos <= 0;
     back.addEventListener("click", () => {
-      if (step > 0) {
-        step--;
+      if (pos > 0) {
+        step = p[pos - 1];
         renderStep();
       }
     });
-    const isLast = step === totalSteps - 1;
-    const next = el(
-      "button",
-      "btn btn-solid btn-sm",
-      esc(isLast ? quiz.buttons.submit : quiz.buttons.next)
-    );
+    nav.appendChild(back);
+    if (steps[step].type !== "choice") return;
+    const next = el("button", "btn btn-solid btn-sm", esc(quiz.buttons.next));
     next.type = "button";
     next.id = "quiz-next";
     next.addEventListener("click", () => {
-      if (!isLast) {
-        step++;
+      const p2 = path();
+      const nextStep = p2[p2.indexOf(step) + 1];
+      if (nextStep != null) {
+        step = nextStep;
         renderStep();
-      } else {
-        finish();
       }
     });
-    nav.append(back, next);
+    nav.appendChild(next);
   }
 
   function syncNav() {
     const next = $("#quiz-next");
-    if (next) next.disabled = !currentStepValid();
+    if (next) next.disabled = answers[steps[step].key] == null;
   }
 
-  function finish() {
+  function finish(contactData) {
     // Static site: persist locally; wire to a real endpoint if needed.
     try {
       const leads = JSON.parse(localStorage.getItem("aurum-leads") || "[]");
-      leads.push({ ...answers, at: new Date().toISOString() });
+      leads.push({ answers: answeredSteps(), contact: contactData, at: new Date().toISOString() });
       localStorage.setItem("aurum-leads", JSON.stringify(leads));
     } catch (_) { /* storage may be unavailable */ }
     const box = $("#quiz-step");
     box.innerHTML = `
       <div class="quiz-done">
         <div class="check">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
-        </div>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </div>
         <h3 class="quiz-step-title">${esc(quiz.done.title)}</h3>
         <p class="quiz-step-hint">${esc(quiz.done.text)}</p>
       </div>`;
+    if (quiz.done.link?.url) {
+      const a = el("a", "btn btn-solid btn-sm", esc(quiz.done.link.label));
+      a.href = quiz.done.link.url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      $(".quiz-done", box).appendChild(a);
+    }
     $("#quiz-nav").innerHTML = "";
-    $("#quiz-progress").innerHTML = "";
-    for (let i = 0; i < totalSteps; i++) $("#quiz-progress").appendChild(el("span", "done"));
+    $$("#quiz-progress span").forEach((sp) => sp.classList.add("done"));
   }
 
   renderStep();
@@ -608,54 +639,76 @@ function initContact(contact) {
   $("#contact-title").textContent = contact.title;
   $("#contact-subtitle").textContent = contact.subtitle;
 
-  const form = $("#contact-form");
-  const fields = $("#contact-fields");
-  const submit = $("#contact-submit");
-  const done = $("#contact-done");
-  submit.textContent = contact.buttons.submit;
+  const mount = $("#contact-mount");
+  const done = el("div", "contact-form quiz-done");
+  done.hidden = true;
 
-  const inputs = contact.fields.map((f) => {
-    const wrap = el("div", "svc-field");
-    const id = `contact-${f.key}`;
-    wrap.innerHTML = `<label for="${id}">${esc(f.label)}${f.required ? " *" : ""}</label>`;
-    const input = document.createElement(f.type === "textarea" ? "textarea" : "input");
-    if (f.type !== "textarea") input.type = f.type;
-    else input.rows = f.rows || 5;
-    input.id = id;
-    input.name = f.key;
-    input.placeholder = f.placeholder || "";
-    input.required = !!f.required;
-    wrap.appendChild(input);
-    fields.appendChild(wrap);
-    return input;
-  });
-
-  const valid = () => inputs.every((i) => !i.required || i.value.trim().length > 0) && form.checkValidity();
-  const sync = () => (submit.disabled = !valid());
-  form.addEventListener("input", sync);
-
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    if (!valid()) return;
-    form.hidden = true;
-    done.hidden = false;
-    done.innerHTML = `
+  const showForm = () => {
+    mount.innerHTML = "";
+    const form = buildContactForm(contact, {
+      onSubmit: () => {
+        form.hidden = true;
+        done.hidden = false;
+        done.innerHTML = `
       <div class="check">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
       </div>
       <h3 class="quiz-step-title">${esc(contact.done.title)}</h3>
       <p class="quiz-step-hint">${esc(contact.done.text)}</p>`;
-    const again = el("button", "btn btn-ghost btn-sm", esc(contact.buttons.again));
-    again.type = "button";
-    again.addEventListener("click", () => {
-      form.reset();
-      sync();
-      done.hidden = true;
-      form.hidden = false;
-      inputs[0]?.focus();
+        const again = el("button", "btn btn-ghost btn-sm", esc(contact.buttons.again));
+        again.type = "button";
+        again.addEventListener("click", () => {
+          done.hidden = true;
+          showForm();
+          $("input, textarea", mount)?.focus();
+        });
+        done.appendChild(again);
+      },
     });
-    done.appendChild(again);
+    mount.append(form, done);
+  };
+  showForm();
+}
+
+// Shared by the About page and the questionnaire's last step.
+function buildContactForm(contact, { exclude = [], submitLabel, onSubmit } = {}) {
+  const form = el("form", "contact-form");
+  form.noValidate = true;
+  const fields = el("div", "contact-fields");
+  const actions = el("div", "contact-actions");
+  const submit = el("button", "btn btn-solid btn-sm", esc(submitLabel || contact.buttons.submit));
+  submit.type = "submit";
+  submit.disabled = true;
+  actions.appendChild(submit);
+  form.append(fields, actions);
+
+  const uid = Math.random().toString(36).slice(2, 8);
+  const inputs = contact.fields
+    .filter((f) => !exclude.includes(f.key))
+    .map((f) => {
+      const wrap = el("div", "svc-field");
+      const id = `contact-${f.key}-${uid}`;
+      wrap.innerHTML = `<label for="${id}">${esc(f.label)}${f.required ? " *" : ""}</label>`;
+      const input = document.createElement(f.type === "textarea" ? "textarea" : "input");
+      if (f.type !== "textarea") input.type = f.type;
+      else input.rows = f.rows || 5;
+      input.id = id;
+      input.name = f.key;
+      input.placeholder = f.placeholder || "";
+      input.required = !!f.required;
+      wrap.appendChild(input);
+      fields.appendChild(wrap);
+      return input;
+    });
+
+  const valid = () => inputs.every((i) => !i.required || i.value.trim().length > 0) && form.checkValidity();
+  form.addEventListener("input", () => (submit.disabled = !valid()));
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!valid()) return;
+    onSubmit?.(Object.fromEntries(inputs.map((i) => [i.name, i.value.trim()])));
   });
+  return form;
 }
 
 /* ---------------- footer ---------------- */

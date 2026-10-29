@@ -672,7 +672,10 @@ textarea:focus {
 .contact-fields .svc-field:first-child,
 .contact-fields .svc-field:has(textarea) { grid-column: 1 / -1; }
 .contact-actions { display: flex; justify-content: flex-end; margin-top: 26px; }
-#contact-done .btn { margin-top: 8px; }
+#contact-mount .quiz-done .btn { margin-top: 8px; }
+.quiz .contact-form { background: none; border: 0; padding: 0; box-shadow: none; }
+.quiz-info-actions { display: flex; justify-content: center; margin-top: 28px; }
+.quiz-done .btn { margin-top: 8px; }
 
 /* ============================================================
    Testimonials
