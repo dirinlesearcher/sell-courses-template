@@ -13,7 +13,6 @@ js/app.js                   config loader + all interactivity
 data/config.json            ALL site content — edit this, not the HTML
 assets/icons/               logo, favicon, SVG icons
 assets/images/author/       author photo(s)
-assets/images/courses/      course media
 assets/images/testimonials/ client avatars
 .github/workflows/pages.yml GitHub Pages deploy
 ```
@@ -21,7 +20,7 @@ assets/images/testimonials/ client avatars
 ## Editing content
 
 Everything the visitor sees — navigation labels, hero text, author bio,
-course modules/pricing, calculator labels and defaults, questionnaire steps,
+course program, packages and pricing, calculator labels and defaults, questionnaire steps,
 testimonials, footer — lives in `data/config.json`. Change values there; no
 HTML/JS edits needed.
 

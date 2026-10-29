@@ -174,34 +174,100 @@ function renderAuthor(author) {
 
 /* ---------------- course ---------------- */
 function renderCourse(course) {
-  $("#course-title").textContent = course.title;
-  $("#course-subtitle").textContent = course.subtitle;
-  const img = $("#course-image");
-  img.src = course.image;
-  img.alt = course.imageAlt || course.title;
+  const { intro, results, topics, program, stats, packages, pricing, bonuses, installments, guarantees } = course;
+  const fillList = (target, items, cls) =>
+    items.forEach((t) => target.appendChild(el("li", cls || "", esc(t))));
+  const titled = (key, title) => ($(`#course-${key}-title`).textContent = title);
 
-  const list = $("#course-modules");
-  course.modules.forEach(({ n, title, desc }) => {
-    const row = el("div", "module");
-    row.append(
-      el("div", "module-num", esc(n)),
-      Object.assign(el("div"), {
-        innerHTML: `<h3 class="module-title">${esc(title)}</h3><p class="module-desc">${esc(desc)}</p>`,
-      })
-    );
-    list.appendChild(row);
+  $("#course-eyebrow").textContent = intro.eyebrow;
+  $("#course-title").textContent = intro.title;
+  $("#course-subtitle").textContent = intro.subtitle;
+  fillList($("#course-highlights"), intro.highlights);
+
+  titled("results", results.title);
+  fillList($("#course-results"), results.items);
+
+  titled("topics", topics.title);
+  topics.items.forEach(({ title, points }, i) => {
+    const card = el("div", "course-topic", `<h3 class="course-card-title"><span>${i + 1}.</span> ${esc(title)}</h3>`);
+    const ul = el("ul", "dash-list");
+    fillList(ul, points);
+    card.appendChild(ul);
+    $("#course-topics").appendChild(card);
   });
 
-  const benefits = $("#course-benefits");
-  course.benefits.forEach((b) => benefits.appendChild(el("li", "", esc(b))));
+  titled("program", program.title);
+  program.blocks.forEach(({ title, results: res }, i) => {
+    const card = el(
+      "div",
+      "course-block",
+      `<p class="course-block-label">${esc(program.blockLabel)} ${i + 1}</p>
+       <h3 class="course-card-title">${esc(title)}</h3>
+       <p class="course-block-result">${esc(program.resultLabel)}</p>`
+    );
+    const ul = el("ul", "check-list");
+    fillList(ul, res);
+    card.appendChild(ul);
+    $("#course-blocks").appendChild(card);
+  });
 
-  const { price, oldPrice, currency, note, ctaLabel, ctaTarget } = course.pricing;
-  const pricing = $("#course-pricing");
-  pricing.innerHTML = `
-    <span class="price-now">${esc(currency)}${esc(price)}</span>
-    <span class="price-old">${esc(currency)}${esc(oldPrice)}</span>
-    <p class="price-note">${esc(note)}</p>`;
-  pricing.appendChild(ctaButton({ label: ctaLabel, target: ctaTarget }, true));
+  titled("stats", stats.title);
+  stats.items.forEach(({ value, label }) => {
+    const item = el("div");
+    item.append(el("dt", "", esc(value)), el("dd", "", esc(label)));
+    $("#course-stats").appendChild(item);
+  });
+
+  titled("packages", packages.title);
+  packages.items.forEach(({ name, tagline, features }) => {
+    const card = el(
+      "div",
+      "course-package",
+      `<h3 class="course-package-name">${esc(name)}</h3><p class="course-package-tagline">${esc(tagline)}</p>`
+    );
+    const ul = el("ul", "check-list");
+    features.forEach(({ text, off }) => ul.appendChild(el("li", off ? "is-off" : "", esc(text))));
+    card.appendChild(ul);
+    $("#course-packages").appendChild(card);
+  });
+
+  $("#course-pricing-title").textContent = pricing.title;
+  $("#course-pricing-subtitle").textContent = pricing.subtitle;
+  const cur = esc(pricing.currency);
+  const { labels } = pricing;
+  pricing.items.forEach(({ name, regular, prepay, prepaySave, full, fullSave }) => {
+    $("#course-prices").appendChild(
+      el(
+        "div",
+        "course-price",
+        `<h3 class="course-package-name">${esc(name)}</h3>
+         <p class="course-price-row"><span>${esc(labels.regular)}</span><s>${cur} ${esc(regular)}</s></p>
+         <p class="course-price-row"><span>${esc(labels.prepay)}</span><strong>${cur} ${esc(prepay)}</strong><em>−${cur} ${esc(prepaySave)}</em></p>
+         <p class="course-price-row"><span>${esc(labels.full)}</span><strong>${cur} ${esc(full)}</strong><em>−${cur} ${esc(fullSave)}</em></p>`
+      )
+    );
+  });
+
+  titled("bonuses", bonuses.title);
+  bonuses.items.forEach(({ label, text }) =>
+    $("#course-bonuses").appendChild(
+      el("div", "course-info", `<p class="course-block-label">${esc(label)}</p><p class="course-info-text">${esc(text)}</p>`)
+    )
+  );
+
+  titled("installments", installments.title);
+  installments.items.forEach(({ title, text }) =>
+    $("#course-installments").appendChild(
+      el("div", "course-info", `<h3 class="course-card-title">${esc(title)}</h3><p class="course-info-text">${esc(text)}</p>`)
+    )
+  );
+
+  titled("guarantees", guarantees.title);
+  guarantees.items.forEach(({ title, text }) =>
+    $("#course-guarantees").appendChild(
+      el("li", "course-info", `<h3 class="course-card-title">${esc(title)}</h3><p class="course-info-text">${esc(text)}</p>`)
+    )
+  );
 }
 
 /* ---------------- calculator ---------------- */
