@@ -25,6 +25,21 @@ course modules/pricing, calculator labels and defaults, questionnaire steps,
 testimonials, footer — lives in `data/config.json`. Change values there; no
 HTML/JS edits needed.
 
+## Pages
+
+The site is split into separate pages; only the active one is shown and the
+header is the only way to switch between them (hash routes, so it works on
+GitHub Pages): `#/home` (hero), `#/about` (author + testimonials + contact
+form), `#/course`, `#/calculator`, `#/questionnaire`. Each `<section>` in
+`index.html` declares its page with `data-page`. Header links come from
+`navigation`; old anchors like `#testimonials` are mapped via
+`routes.aliases`.
+
+## Contact form
+
+Configured under `contact` (fields, button labels, success text). It only
+validates and shows a confirmation — nothing is sent yet.
+
 ## Theme
 
 Light/dark toggle sits in the header (top right). Default theme is set by

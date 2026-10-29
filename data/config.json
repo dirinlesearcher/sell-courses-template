@@ -16,12 +16,15 @@
     "storageKey": "aurum-theme"
   },
   "navigation": [
-    { "id": "author", "label": "Про автора" },
+    { "id": "about", "label": "Про автора" },
     { "id": "course", "label": "Про курс" },
     { "id": "calculator", "label": "Калькулятор" },
-    { "id": "questionnaire", "label": "Опитувальник" },
-    { "id": "testimonials", "label": "Відгуки" }
+    { "id": "questionnaire", "label": "Опитувальник" }
   ],
+  "routes": {
+    "home": "home",
+    "aliases": { "hero": "home", "author": "about", "testimonials": "about", "contact": "about" }
+  },
   "hero": {
     "eyebrow": "Академія лазерного видалення",
     "title": "Видалення тату та перманенту — навичка, що <em>окупається</em>",
@@ -248,6 +251,21 @@
         "text": "Розбір моїх робіт Оленою змінив усе — помилки, які я роками не помічала, виправили за одну консультацію."
       }
     ]
+  },
+  "contact": {
+    "title": "Зв'язатися зі мною",
+    "subtitle": "Маєте питання щодо курсу, обладнання чи співпраці? Напишіть — відповім особисто.",
+    "fields": [
+      { "key": "name", "label": "Ім'я", "type": "text", "required": true, "placeholder": "Ваше ім'я" },
+      { "key": "email", "label": "Email", "type": "email", "required": true, "placeholder": "you@example.com" },
+      { "key": "phone", "label": "Telegram або телефон", "type": "tel", "required": false, "placeholder": "@username або +380..." },
+      { "key": "message", "label": "Повідомлення", "type": "textarea", "required": true, "rows": 5, "placeholder": "Ваше питання..." }
+    ],
+    "buttons": { "submit": "Надіслати", "again": "Написати ще" },
+    "done": {
+      "title": "Повідомлення надіслано",
+      "text": "Дякую! Я відповім вам найближчим часом."
+    }
   },
   "footer": {
     "brand": "AURUM",
