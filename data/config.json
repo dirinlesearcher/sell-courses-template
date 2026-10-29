@@ -244,9 +244,8 @@
         "type": "contact",
         "title": "Заповніть форму та оберіть у Телеграмі зручний час консультації",
         "hint": "",
-        "exclude": [
-          "message"
-        ],
+        "exclude": ["message"],
+        "required": ["name", "phone"],
         "submit": "Записатися!"
       }
     ],

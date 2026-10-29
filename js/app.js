@@ -464,19 +464,25 @@ function initQuestionnaire(quiz, contact) {
   const steps = quiz.steps;
   let step = 0;
 
+  // Answers of steps on the current path; answers to skipped steps are ignored.
+  let active = {};
   const isVisible = (s) =>
     !s.showIf ||
-    Object.entries(s.showIf).every(([key, ids]) => ids.includes(answers[key]));
+    Object.entries(s.showIf).every(([key, ids]) => ids.includes(active[key]));
 
   // Steps the visitor goes through with the current answers.
   function path() {
     const out = [];
+    active = {};
     for (let i = 0; i < steps.length; i++) {
       if (!isVisible(steps[i])) continue;
       out.push(i);
       const s = steps[i];
       if (s.final) break;
-      if (s.type === "choice" && answers[s.key] == null) break;
+      if (s.type === "choice") {
+        if (answers[s.key] == null) break;
+        active[s.key] = answers[s.key];
+      }
     }
     return out;
   }
@@ -486,7 +492,7 @@ function initQuestionnaire(quiz, contact) {
     const p = path();
     const pos = p.indexOf(step);
     const last = p[p.length - 1];
-    const pending = (s) => Object.keys(s.showIf || {}).some((k) => answers[k] == null);
+    const pending = (s) => Object.keys(s.showIf || {}).some((k) => active[k] == null);
     const ahead =
       steps[last].type === "choice"
         ? steps.slice(last + 1).filter((s) => !s.final && (isVisible(s) || pending(s))).length
@@ -540,6 +546,7 @@ function initQuestionnaire(quiz, contact) {
       box.appendChild(
         buildContactForm(contact, {
           exclude: s.exclude,
+          required: s.required,
           submitLabel: s.submit,
           onSubmit: finish,
         })
@@ -671,7 +678,8 @@ function initContact(contact) {
 }
 
 // Shared by the About page and the questionnaire's last step.
-function buildContactForm(contact, { exclude = [], submitLabel, onSubmit } = {}) {
+// `required` overrides which fields are mandatory (list of field keys).
+function buildContactForm(contact, { exclude = [], required, submitLabel, onSubmit } = {}) {
   const form = el("form", "contact-form");
   form.noValidate = true;
   const fields = el("div", "contact-fields");
@@ -685,7 +693,8 @@ function buildContactForm(contact, { exclude = [], submitLabel, onSubmit } = {})
   const uid = Math.random().toString(36).slice(2, 8);
   const inputs = contact.fields
     .filter((f) => !exclude.includes(f.key))
-    .map((f) => {
+    .map((field) => {
+      const f = required ? { ...field, required: required.includes(field.key) } : field;
       const wrap = el("div", "svc-field");
       const id = `contact-${f.key}-${uid}`;
       wrap.innerHTML = `<label for="${id}">${esc(f.label)}${f.required ? " *" : ""}</label>`;
